@@ -31,7 +31,6 @@ interpolate :: Point -> Point -> Float -> Point
 interpolate (x0, y0, z0) (x1, y1, z1) t = (x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, z0 + (z1 - z0) * t)
 
 
-
 projectToSphere :: Point -> Point
 projectToSphere (x, y, z) = (x * t, y * t, z * t)
   where
@@ -39,21 +38,22 @@ projectToSphere (x, y, z) = (x * t, y * t, z * t)
     t = 1 / vlength
 
 subdivide :: Int -> Triangle -> [Triangle]
-subdivide n (a, b, c) = concatMap makeTriangles . map fromIntegral $ [0..n - 1]
+subdivide n (a, b, c) = concatMap makeTriangles . map fromIntegral $ [1..n - 1]
   where
     makeTriangles i =
         let
-            f01                  = interpolate a b i
-            f02                  = interpolate a c i
-            f11                  = interpolate a b (i + 1)
-            f12                  = interpolate a c (i + 1)
-            makeTopTriangle j    = (interpolate f01 f02 j, interpolate f01 f02 (j + 1), interpolate f11 f12 (j + 1))
-            makeBottomTriangle j = (interpolate f11 f12 j, interpolate f11 f12 (j + 1), interpolate f01 f02 j)
-        in map makeTopTriangle [0..i - 1] ++ map makeBottomTriangle [0..i]
+            f01                  = interpolate a b (i / fromIntegral n)
+            f02                  = interpolate a c (i / fromIntegral n)
+            f11                  = interpolate a b ((i + 1) / fromIntegral n)
+            f12                  = interpolate a c ((i + 1) / fromIntegral n)
+            makeTopTriangle j    = (interpolate f01 f02 (j / i), interpolate f01 f02 ((j + 1) / i), interpolate f11 f12 ((j + 1) / (i + 1)))
+            makeBottomTriangle j = (interpolate f11 f12 (j / (i + 1)), interpolate f11 f12 ((j + 1) / (i + 1)), interpolate f01 f02 (j / i))
+        in map makeTopTriangle [0..i - 1] ++ map makeBottomTriangle [0..i] 
+                ++ [(a, interpolate a b (1 / fromIntegral n), interpolate a c (1 / fromIntegral n))]
 
 
 dome :: Int -> [Triangle]
-dome n = map (onSphere) . concatMap (subdivide n) $ faces
+dome n = map onSphere . concatMap (subdivide n) $ faces
   where
     onSphere (a, b, c) = (projectToSphere a, projectToSphere b, projectToSphere c)
 
