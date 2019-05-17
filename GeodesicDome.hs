@@ -5,6 +5,7 @@ tau :: Float
 tau = 1.618033988749895
 
 type Point = (Float, Float, Float)
+
 type Triangle = (Point, Point, Point)
 
 vertices :: [Point]
