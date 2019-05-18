@@ -1,8 +1,6 @@
-{-# LANGUAGE NamedFieldPuns #-}
 module Group
-    (elements, o, identity, Group, formGroup, inverseElement, allSubgroups)
+    (elements, o, identity, Group, formGroup, inverseElement, cyclicSubgroups, prod, groupZ)
     where
-
 import           Data.List    (find)
 import           Data.List.HT
 import           Data.Set     as Set (Set, fromList, member, toList)
@@ -58,8 +56,16 @@ inverseElement (Group elements o identity) x = case find ((== identity) . (x `o`
     Nothing ->
         error "This should't happen"
 
-genSubgroup :: Ord a => Group a -> a -> Group a
-genSubgroup (Group elements o identity) x =
+prod :: Ord a => Ord b => Group a -> Group b -> Group (a, b)
+prod (Group aElems ao aIdentity) (Group bElems bo bIdentity) =
+    Group
+        { elements = fromList [(x, y) | x <- toList aElems, y <- toList bElems]
+        , o = \(x1, y1) (x2, y2) -> (x1 `ao` x2, y1 `bo` y2)
+        , identity = (aIdentity, bIdentity)
+        }
+
+genCyclicSubgroup :: Ord a => Group a -> a -> Group a
+genCyclicSubgroup (Group elements o identity) x =
     if member x elements then
         Group
             { elements = fromList . takeUntil (== identity) . scanl1 o . repeat $ x
@@ -70,9 +76,9 @@ genSubgroup (Group elements o identity) x =
         error "Element is not in the group set"
 
 
-allSubgroups :: Ord a => Group a -> [Group a]
-allSubgroups group@(Group xs o identity) =
-    map toGroup . rmvDup . map (elements . genSubgroup group) . toList $ xs
+cyclicSubgroups :: Ord a => Group a -> [Group a]
+cyclicSubgroups group@(Group xs o identity) =
+    map toGroup . rmvDup . map (elements . genCyclicSubgroup group) . toList $ xs
   where
     rmvDup = toList . fromList
     toGroup els = Group els o identity
@@ -85,12 +91,11 @@ formGroup cp = case (findIdentity cp, satInverse cp && satClosed cp && satAssoci
     _ ->
         Nothing
 
-main :: IO ()
-main = do
-    let cp = (fromList [0..5], \x y -> (x + y) `mod` 6)
-    let maybeGroup = formGroup cp
-    case maybeGroup of
-        Just group -> do
-            print $ map elements . allSubgroups $ group
-        _ ->
-            print $ "Not a group"
+groupZ :: Int -> Group Int
+groupZ n = Group
+    { elements = fromList [0..n - 1]
+    , o = addMod
+    , identity = 0
+    }
+  where
+    addMod x y = (x + y) `mod` n
