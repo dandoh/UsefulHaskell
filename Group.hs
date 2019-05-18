@@ -1,8 +1,17 @@
 module Group
-    (elements, o, identity, Group, formGroup, inverseElement, cyclicSubgroups, prod, groupZ)
+    ( elements
+    , o
+    , identity
+    , Group
+    , formGroup
+    , inverseElement
+    , cyclicSubgroups
+    , prod
+    , groupZ
+    , genCyclicSubgroup
+    )
     where
 import           Data.List    (find)
-import           Data.List.HT
 import           Data.Set     as Set (Set, fromList, member, toList)
 import           Debug.Trace
 {- |
@@ -18,6 +27,12 @@ data Group a = Group
     , o        :: a -> a -> a
     , identity :: a
     }
+
+takeUntil :: (a -> Bool) -> [a] -> [a]
+takeUntil pred (x:xs)
+    | pred x    = [x]
+    | otherwise = x : takeUntil pred xs
+takeUntil _ [] = []
 
 satAssociativity :: Ord a => (Set a, a -> a -> a) -> Bool
 satAssociativity (g, o) = all propAssoc allTriples
